@@ -1,5 +1,31 @@
 import cv2
 import mediapipe as mp
+import numpy as np
+
+
+def findFace(img):
+    faceCaseade = cv2.CascadeClassifier('resources/haarcascade_frontalface_default.xml')
+    imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = faceCaseade.detectMultiScale(imgGray, 1.2, 8)
+
+    myFaces = []
+    myFaceListArea = []
+
+    for (x, y, w, h) in faces:
+        cv2.rectangle(img, (x, y), (x + w, y+h), (0, 0, 255), 2)
+        cx = x + w // 2
+        cy = y + h // 2
+        area = w * h
+        myFaceListArea.append(area)
+        myFaces.append((cx, cy))
+
+    if len(myFaces) > 0:
+        index = myFaceListArea.index(max(myFaceListArea))
+
+        return img, [myFaces[index], myFaceListArea[index]]
+    else:
+        return img, [[0,0],0]
+
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
@@ -19,6 +45,7 @@ thumb_tip = 4
 while True:
     ret, img = cap.read()
     img = cv2.flip(img, 1)
+    findFace(img)
     h, w, c = img.shape
     results = hands.process(img)
 
