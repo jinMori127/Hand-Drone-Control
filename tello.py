@@ -29,7 +29,7 @@ def findFace(img):
 
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
-            static_image_mode=False,  # Set to True if working with static images
+            static_image_mode=False,
             max_num_hands=1,         # Increase if multiple hands might be detected
             min_detection_confidence=0.3,  # Lower this value if far hands are hard to detect
             min_tracking_confidence=0.3    # Lower this for better tracking at a distance
