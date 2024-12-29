@@ -26,6 +26,46 @@ def findFace(img):
         return img, [[0, 0], 0]
 
 
+def mode_1(detected_gesture, x, y, z):
+    """
+    :param detected_gesture: the detected gesture from the hand detection
+    brief: this function will move the drone according to the detected gesture
+    """
+
+    if detected_gesture == "Forward":
+        z += 1
+    elif detected_gesture == "Backward":
+        z -= 1
+    elif detected_gesture == "Left":
+        x -= 1
+    elif detected_gesture == "Right":
+        x += 1
+    elif detected_gesture == "Up":
+        y += 1
+    elif detected_gesture == "Down":
+        y -= 1
+
+    return x, y, z
+
+
+def mode_2(info):
+    """
+    :param info: the info of the face detected [center of the face, area of the face]
+    brief: this function will track the face and keep the drone in the center of the face
+    """
+    pass
+
+
+def mode_3(detected_gesture, info):
+    """
+    :param detected_gesture: the detected gesture from the hand detection
+    :param info: the info of the face detected [center of the face, area of the face]
+    bief: this function will track the face and keep the drone in the center of the face and combine it with the drone
+            movement according to the detected gesture
+    """
+    pass
+
+
 if __name__ == "__main__":
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(
@@ -35,8 +75,16 @@ if __name__ == "__main__":
         min_tracking_confidence=0.3  # Lower this for better tracking at a distance
     )
 
+    '''
+        mode 1 : for the hand detection 
+        mode 2 : for the face tracking
+        mode 3 : for the hand and face detection
+    '''
+    current_mode = 0
+    drone_x, drone_y, drone_z = 0, 0, 0
+
     mp_draw = mp.solutions.drawing_utils
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(0)
 
     finger_tips = [8, 12, 16, 20]
     thumb_tip = 4
@@ -52,8 +100,9 @@ if __name__ == "__main__":
         if not ret:
             print("Failed to grab frame. Check if the camera is connected.")
             continue
+
         # get the faces in the Image
-        findFace(img)
+        img, info = findFace(img)
 
         img = cv2.resize(img, (640, 480))
         h, w, c = img.shape
@@ -92,35 +141,41 @@ if __name__ == "__main__":
                     current_gesture = "Stop"
 
                 # Forward
-                if lm_list[3].x > lm_list[4].x and lm_list[8].y < lm_list[6].y and lm_list[12].y > lm_list[10].y and \
+                elif lm_list[3].x > lm_list[4].x and lm_list[8].y < lm_list[6].y and lm_list[12].y > lm_list[10].y and \
                         lm_list[16].y > lm_list[14].y and lm_list[20].y > lm_list[18].y:
                     current_gesture = "Forward"
 
                 # Backward
-                if lm_list[3].x > lm_list[4].x and lm_list[3].y < lm_list[4].y and lm_list[8].y > lm_list[6].y and \
+                elif lm_list[3].x > lm_list[4].x and lm_list[3].y < lm_list[4].y and lm_list[8].y > lm_list[6].y and \
                         lm_list[12].y < lm_list[10].y and \
                         lm_list[16].y < lm_list[14].y and lm_list[20].y < lm_list[18].y:
                     current_gesture = "Backward"
 
                 # Left
-                if lm_list[4].y < lm_list[2].y and lm_list[8].x < lm_list[6].x and lm_list[12].x > lm_list[10].x and \
+                elif lm_list[4].y < lm_list[2].y and lm_list[8].x < lm_list[6].x and lm_list[12].x > lm_list[10].x and \
                         lm_list[16].x > lm_list[14].x and lm_list[20].x > lm_list[18].x and lm_list[5].x < lm_list[0].x:
                     current_gesture = "Left"
 
                 # Right
-                if lm_list[4].y < lm_list[2].y and lm_list[8].x > lm_list[6].x and lm_list[12].x < lm_list[10].x and \
+                elif lm_list[4].y < lm_list[2].y and lm_list[8].x > lm_list[6].x and lm_list[12].x < lm_list[10].x and \
                         lm_list[16].x < lm_list[14].x and lm_list[20].x < lm_list[18].x:
                     current_gesture = "Right"
 
-                if all(finger_fold_status):
-                    # like
+                elif all(finger_fold_status):
+
                     if lm_list[thumb_tip].y < lm_list[thumb_tip - 1].y < lm_list[thumb_tip - 2].y and lm_list[0].x < \
                             lm_list[3].y:
                         current_gesture = "Up"
-                    # Dislike
+
                     if lm_list[thumb_tip].y > lm_list[thumb_tip - 1].y > lm_list[thumb_tip - 2].y and lm_list[0].x < \
                             lm_list[3].y:
                         current_gesture = "Down"
+
+                        # Forward
+                elif lm_list[3].x > lm_list[4].x and lm_list[8].y < lm_list[6].y and lm_list[12].y > lm_list[
+                    10].y and \
+                        lm_list[16].y > lm_list[14].y and lm_list[20].y < lm_list[18].y:
+                    current_mode += 1 % 3
 
                 # Debouncing logic
                 if current_gesture:
@@ -140,7 +195,20 @@ if __name__ == "__main__":
 
                 # Display recognized gesture
                 if detected_gesture:
-                    cv2.putText(img, detected_gesture, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 3)
+                    cv2.putText(img, detected_gesture, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                (0, 0, 255), 3)
+
+                if current_mode == 0:
+                    drone_x, drone_y, drone_z = mode_1(detected_gesture, drone_x, drone_y, drone_z)
+
+                    cv2.putText(img, f"({drone_x} , {drone_y}, {drone_z})", (120, 120),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                (0, 0, 255), 3)
+                    detected_gesture = None
+                elif current_mode == 1:
+                    mode_2(info)
+                elif current_mode == 2:
+                    mode_3(detected_gesture, info)
 
                 mp_draw.draw_landmarks(img, hand_landmark,
                                        mp_hands.HAND_CONNECTIONS,
