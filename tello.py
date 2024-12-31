@@ -65,14 +65,20 @@ def mode_1(drone, detected_gesture):
     drone.move(detected_gesture)
     return drone.get_position()
 
-def mode_2(info):
+def mode_2(info, drone, img_shape):
     """
     :param info: the info of the face detected [center of the face, area of the face]
     brief: this function will track the face and keep the drone in the center of the face
     """
     face_center = info[0]  # Extract the center of the face
-    face_x, face_y = face_center  # Unpack x, y coordinates
-    return face_x, face_y
+    img_center_x = img_shape[1] // 2  # Image center (width)
+    img_center_y = img_shape[0] // 2  # Image center (height)
+
+    # Calculate the steps required to center the face
+    steps_x = face_center[0] - img_center_x
+    steps_y = img_center_y - face_center[1]  # Inverted because image Y increases downward
+
+    return steps_x, steps_y
 
 def mode_3(detected_gesture, info):
     """
@@ -249,8 +255,12 @@ if __name__ == "__main__":
                     detected_gesture = None
 
                 elif current_mode == 1:
-                    face_x, face_y = mode_2(info)
-                    # Display the face's coordinates in the top-right corner
+                    face_x, face_y = info[0]  # Face center coordinates
+                    steps_x, steps_y = mode_2(info, drone, img.shape)  # Get required steps
+                    
+                    # Display the number of steps needed to follow the face
+                    cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
                 elif current_mode == 2:
                     face_x, face_y = mode_3(detected_gesture, info)
@@ -261,7 +271,6 @@ if __name__ == "__main__":
                                        mp_draw.DrawingSpec((0, 255, 0), 2, 2)
                                        )
                 
-
 
 
         cv2.imshow("Hand Sign Detection", img)
