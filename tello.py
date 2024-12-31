@@ -107,15 +107,13 @@ if __name__ == "__main__":
         mode 2 : for the face tracking
         mode 3 : for the hand and face detection
     '''
-    steps_x, steps_y = 0, 0
-    current_mode = 0
-    drone = Drone()
-
     mp_draw = mp.solutions.drawing_utils
     cap = cv2.VideoCapture(0)
-
     finger_tips = [8, 12, 16, 20]
     thumb_tip = 4
+    steps_x, steps_y = 0, 0 # to center the face
+    current_mode = 0
+    drone = Drone()
 
     # Debounce variables
     debounce_counts = {"mode": 0}  # Track how many consecutive frames a gesture is detected
@@ -123,6 +121,7 @@ if __name__ == "__main__":
     mode_change_threshold = 15  # Minimum frames for stable mode change
     detected_gesture = None
     modes = ["Hand Detection", "Face Tracking", "Hand and Face Detection"]
+
 
     while True:
         ret, img = cap.read()
@@ -134,7 +133,6 @@ if __name__ == "__main__":
         # get the faces in the Image
         img, info = findFace(img)
 
-
         # Display the face's coordinates in the top-right corner
         if current_mode in [1, 2]:  # Only draw square and show face coordinates in mode 1 and 2
             face_x, face_y = info[0]  # Extract face coordinates
@@ -145,6 +143,11 @@ if __name__ == "__main__":
             cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
         
+        # Display current mode
+        cv2.putText(img, f"Mode: {modes[current_mode]}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+                            (0, 0, 255), 2)
+        
+        # Mode logic
         if current_mode == 0:
             mode_1(drone, detected_gesture)
             detected_gesture = None
@@ -165,10 +168,6 @@ if __name__ == "__main__":
             # Display the number of steps needed to follow the face
             # cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
             #             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
-
-        # Display current mode
-        cv2.putText(img, f"Mode: {modes[current_mode]}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
-                            (0, 0, 255), 2)
 
 
         img = cv2.resize(img, (640, 480))
