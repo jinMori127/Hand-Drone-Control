@@ -70,7 +70,9 @@ def mode_2(info):
     :param info: the info of the face detected [center of the face, area of the face]
     brief: this function will track the face and keep the drone in the center of the face
     """
-    pass
+    face_center = info[0]  # Extract the center of the face
+    face_x, face_y = face_center  # Unpack x, y coordinates
+    return face_x, face_y
 
 def mode_3(detected_gesture, info):
     """
@@ -79,7 +81,9 @@ def mode_3(detected_gesture, info):
     brief: this function will track the face and keep the drone in the center of the face and combine it with the drone
            movement according to the detected gesture
     """
-    pass
+    face_center = info[0]  # Extract the center of the face
+    face_x, face_y = face_center  # Unpack x, y coordinates
+    return face_x, face_y
 
 if __name__ == "__main__":
     mp_hands = mp.solutions.hands
@@ -120,6 +124,19 @@ if __name__ == "__main__":
 
         # get the faces in the Image
         img, info = findFace(img)
+
+
+        # Display the face's coordinates in the top-right corner
+        if current_mode in [1, 2]:  # Only draw square and show face coordinates in mode 1 and 2
+            face_x, face_y = info[0]  # Extract face coordinates
+            # Display the face's coordinates in the top-right corner
+            cv2.putText(img, f"Face: ({face_x}, {face_y})", (img.shape[1] - 220, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+                        (255, 0, 0), 2)
+        
+        # Display current mode
+        cv2.putText(img, f"Mode: {modes[current_mode]}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+                            (0, 0, 255), 2)
+
 
         img = cv2.resize(img, (640, 480))
         h, w, c = img.shape
@@ -219,33 +236,33 @@ if __name__ == "__main__":
 
                 # Display recognized gesture
                 if detected_gesture:
-                    cv2.putText(img, detected_gesture, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                (0, 0, 255), 3)
-
-                # Display current mode
-                cv2.putText(img, f"Mode: {modes[current_mode]}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                    (0, 0, 255), 3)
-
+                    cv2.putText(img, detected_gesture, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+                                (0, 0, 255), 2)
+                    
                 # Display drone position
                 cv2.putText(img, f"({drone.x} , {drone.y}, {drone.z})", (20, 65),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1,
-                            (0, 0, 255), 3)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8,
+                            (0, 0, 255), 2)
                 
                 if current_mode == 0:
                     mode_1(drone, detected_gesture)
                     detected_gesture = None
 
                 elif current_mode == 1:
-                    mode_2(info)
+                    face_x, face_y = mode_2(info)
+                    # Display the face's coordinates in the top-right corner
 
                 elif current_mode == 2:
-                    mode_3(detected_gesture, info)
+                    face_x, face_y = mode_3(detected_gesture, info)
 
                 mp_draw.draw_landmarks(img, hand_landmark,
                                        mp_hands.HAND_CONNECTIONS,
                                        mp_draw.DrawingSpec((0, 0, 255), 2, 2),
                                        mp_draw.DrawingSpec((0, 255, 0), 2, 2)
                                        )
+                
+
+
 
         cv2.imshow("Hand Sign Detection", img)
         cv2.waitKey(1)
