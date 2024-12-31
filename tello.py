@@ -105,8 +105,9 @@ if __name__ == "__main__":
     thumb_tip = 4
 
     # Debounce variables
-    debounce_counts = {}  # Track how many consecutive frames a gesture is detected
+    debounce_counts = {"mode": 0}  # Track how many consecutive frames a gesture is detected
     debounce_threshold = 10  # Minimum frames for stable recognition
+    mode_change_threshold = 15  # Minimum frames for stable mode change
     detected_gesture = None
 
     while True:
@@ -185,10 +186,15 @@ if __name__ == "__main__":
                             lm_list[3].y:
                         current_gesture = "Down"
 
+                # Change mode
                 elif lm_list[3].x > lm_list[4].x and lm_list[8].y < lm_list[6].y and lm_list[12].y > lm_list[
                     10].y and \
                         lm_list[16].y > lm_list[14].y and lm_list[20].y < lm_list[18].y:
-                    current_mode += 1 % 3
+                    
+                    debounce_counts["mode"] += 1
+                    if debounce_counts["mode"] >= mode_change_threshold:
+                        current_mode += 1 % 3
+                        debounce_counts["mode"] = 0
 
                 # Debouncing logic
                 if current_gesture:
@@ -208,18 +214,25 @@ if __name__ == "__main__":
 
                 # Display recognized gesture
                 if detected_gesture:
-                    cv2.putText(img, detected_gesture, (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                    cv2.putText(img, detected_gesture, (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                 (0, 0, 255), 3)
 
+                # Display current mode
+                cv2.putText(img, f"Mode: {current_mode}", (20, 65), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                    (0, 0, 255), 3)
+
+                # Display drone position
+                cv2.putText(img, f"({drone.x} , {drone.y}, {drone.z})", (20, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1,
+                            (0, 0, 255), 3)
+                
                 if current_mode == 0:
-                    drone_x, drone_y, drone_z = mode_1(drone, detected_gesture)
-
-                    cv2.putText(img, f"({drone_x} , {drone_y}, {drone_z})", (120, 120),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1,
-                                (0, 0, 255), 3)
+                    mode_1(drone, detected_gesture)
                     detected_gesture = None
+
                 elif current_mode == 1:
                     mode_2(info)
+
                 elif current_mode == 2:
                     mode_3(detected_gesture, info)
 
