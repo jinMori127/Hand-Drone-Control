@@ -80,16 +80,18 @@ def mode_2(info, drone, img_shape):
 
     return steps_x, steps_y
 
-def mode_3(detected_gesture, info):
+def mode_3(detected_gesture, info, drone, img_shape):
     """
     :param detected_gesture: the detected gesture from the hand detection
     :param info: the info of the face detected [center of the face, area of the face]
     brief: this function will track the face and keep the drone in the center of the face and combine it with the drone
            movement according to the detected gesture
     """
-    face_center = info[0]  # Extract the center of the face
-    face_x, face_y = face_center  # Unpack x, y coordinates
-    return face_x, face_y
+    # hand detection
+    mode_1(drone, detected_gesture)
+    # face tracking
+    steps_x, steps_y = mode_2(info, drone, img_shape)
+    return steps_x, steps_y
 
 if __name__ == "__main__":
     mp_hands = mp.solutions.hands
@@ -105,6 +107,7 @@ if __name__ == "__main__":
         mode 2 : for the face tracking
         mode 3 : for the hand and face detection
     '''
+    steps_x, steps_y = 0, 0
     current_mode = 0
     drone = Drone()
 
@@ -138,7 +141,31 @@ if __name__ == "__main__":
             # Display the face's coordinates in the top-right corner
             cv2.putText(img, f"Face: ({face_x}, {face_y})", (img.shape[1] - 220, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
                         (255, 0, 0), 2)
+            
+            cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
         
+        if current_mode == 0:
+            mode_1(drone, detected_gesture)
+            detected_gesture = None
+
+        elif current_mode == 1:
+            face_x, face_y = info[0]  # Face center coordinates
+            steps_x, steps_y = mode_2(info, drone, img.shape)  # Get required steps
+            
+            # Display the number of steps needed to follow the face
+            # cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+
+        elif current_mode == 2:
+            face_x, face_y = info[0]  # Face center coordinates
+            steps_x, steps_y = mode_3(detected_gesture, info, drone, img.shape) 
+            detected_gesture = None
+        
+            # Display the number of steps needed to follow the face
+            # cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
+            #             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+
         # Display current mode
         cv2.putText(img, f"Mode: {modes[current_mode]}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
                             (0, 0, 255), 2)
@@ -250,20 +277,6 @@ if __name__ == "__main__":
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8,
                             (0, 0, 255), 2)
                 
-                if current_mode == 0:
-                    mode_1(drone, detected_gesture)
-                    detected_gesture = None
-
-                elif current_mode == 1:
-                    face_x, face_y = info[0]  # Face center coordinates
-                    steps_x, steps_y = mode_2(info, drone, img.shape)  # Get required steps
-                    
-                    # Display the number of steps needed to follow the face
-                    cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
-
-                elif current_mode == 2:
-                    face_x, face_y = mode_3(detected_gesture, info)
 
                 mp_draw.draw_landmarks(img, hand_landmark,
                                        mp_hands.HAND_CONNECTIONS,
