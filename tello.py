@@ -1,6 +1,38 @@
 import cv2
 import mediapipe as mp
 
+class Drone:
+    def __init__(self):
+        """
+        Initializes the Drone class with position attributes.
+        """
+        self.x = 0
+        self.y = 0
+        self.z = 0
+
+    def move(self, detected_gesture):
+        """
+        Updates the drone's position based on the detected gesture.
+        :param detected_gesture: the detected gesture from the hand detection
+        """
+        if detected_gesture == "Forward":
+            self.z += 1
+        elif detected_gesture == "Backward":
+            self.z -= 1
+        elif detected_gesture == "Left":
+            self.x -= 1
+        elif detected_gesture == "Right":
+            self.x += 1
+        elif detected_gesture == "Up":
+            self.y += 1
+        elif detected_gesture == "Down":
+            self.y -= 1
+
+    def get_position(self):
+        """
+        Returns the current position of the drone.
+        """
+        return self.x, self.y, self.z
 
 def findFace(img):
     faceCaseade = cv2.CascadeClassifier('resources/haarcascade_frontalface_default.xml')
@@ -20,33 +52,18 @@ def findFace(img):
 
     if len(myFaces) > 0:
         index = myFaceListArea.index(max(myFaceListArea))
-
         return img, [myFaces[index], myFaceListArea[index]]
     else:
         return img, [[0, 0], 0]
 
-
-def mode_1(detected_gesture, x, y, z):
+def mode_1(drone, detected_gesture):
     """
+    :param drone: the Drone object
     :param detected_gesture: the detected gesture from the hand detection
     brief: this function will move the drone according to the detected gesture
     """
-
-    if detected_gesture == "Forward":
-        z += 1
-    elif detected_gesture == "Backward":
-        z -= 1
-    elif detected_gesture == "Left":
-        x -= 1
-    elif detected_gesture == "Right":
-        x += 1
-    elif detected_gesture == "Up":
-        y += 1
-    elif detected_gesture == "Down":
-        y -= 1
-
-    return x, y, z
-
+    drone.move(detected_gesture)
+    return drone.get_position()
 
 def mode_2(info):
     """
@@ -55,16 +72,14 @@ def mode_2(info):
     """
     pass
 
-
 def mode_3(detected_gesture, info):
     """
     :param detected_gesture: the detected gesture from the hand detection
     :param info: the info of the face detected [center of the face, area of the face]
-    bief: this function will track the face and keep the drone in the center of the face and combine it with the drone
-            movement according to the detected gesture
+    brief: this function will track the face and keep the drone in the center of the face and combine it with the drone
+           movement according to the detected gesture
     """
     pass
-
 
 if __name__ == "__main__":
     mp_hands = mp.solutions.hands
@@ -81,7 +96,7 @@ if __name__ == "__main__":
         mode 3 : for the hand and face detection
     '''
     current_mode = 0
-    drone_x, drone_y, drone_z = 0, 0, 0
+    drone = Drone()
 
     mp_draw = mp.solutions.drawing_utils
     cap = cv2.VideoCapture(0)
@@ -125,10 +140,10 @@ if __name__ == "__main__":
                     else:
                         finger_fold_status.append(False)
 
-                print(finger_fold_status)
+                #print(finger_fold_status)
 
                 x, y = int(lm_list[8].x * w), int(lm_list[8].y * h)
-                print(x, y)
+                #print(x, y)
 
                 # Gesture recognition logic
                 current_gesture = None
@@ -136,8 +151,7 @@ if __name__ == "__main__":
                 # stop
                 if lm_list[4].y < lm_list[2].y and lm_list[8].y < lm_list[6].y and lm_list[12].y < lm_list[10].y and \
                         lm_list[16].y < lm_list[14].y and lm_list[20].y < lm_list[18].y and lm_list[17].x < lm_list[
-                    0].x < \
-                        lm_list[5].x:
+                    0].x < lm_list[5].x:
                     current_gesture = "Stop"
 
                 # Forward
@@ -171,7 +185,6 @@ if __name__ == "__main__":
                             lm_list[3].y:
                         current_gesture = "Down"
 
-                        # Forward
                 elif lm_list[3].x > lm_list[4].x and lm_list[8].y < lm_list[6].y and lm_list[12].y > lm_list[
                     10].y and \
                         lm_list[16].y > lm_list[14].y and lm_list[20].y < lm_list[18].y:
@@ -199,7 +212,7 @@ if __name__ == "__main__":
                                 (0, 0, 255), 3)
 
                 if current_mode == 0:
-                    drone_x, drone_y, drone_z = mode_1(detected_gesture, drone_x, drone_y, drone_z)
+                    drone_x, drone_y, drone_z = mode_1(drone, detected_gesture)
 
                     cv2.putText(img, f"({drone_x} , {drone_y}, {drone_z})", (120, 120),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1,
