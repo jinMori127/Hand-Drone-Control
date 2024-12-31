@@ -43,7 +43,7 @@ def findFace(img):
     myFaceListArea = []
 
     for (x, y, w, h) in faces:
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        cv2.rectangle(img, (x, y), (x + w, y + h), (255, 0, 0), 2)
         cx = x + w // 2
         cy = y + h // 2
         area = w * h
@@ -140,7 +140,7 @@ if __name__ == "__main__":
             cv2.putText(img, f"Face: ({face_x}, {face_y})", (img.shape[1] - 220, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
                         (255, 0, 0), 2)
             
-            cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
+            cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, img.shape[0] - 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
         
         # Display current mode
@@ -156,18 +156,12 @@ if __name__ == "__main__":
             face_x, face_y = info[0]  # Face center coordinates
             steps_x, steps_y = mode_2(info, drone, img.shape)  # Get required steps
             
-            # Display the number of steps needed to follow the face
-            # cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
-            #             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
         elif current_mode == 2:
             face_x, face_y = info[0]  # Face center coordinates
             steps_x, steps_y = mode_3(detected_gesture, info, drone, img.shape) 
             detected_gesture = None
         
-            # Display the number of steps needed to follow the face
-            # cv2.putText(img, f"Steps to Center: X={steps_x}, Y={steps_y}", (20, 95),
-            #             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
 
         img = cv2.resize(img, (640, 480))
