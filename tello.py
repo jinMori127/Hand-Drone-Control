@@ -109,6 +109,7 @@ if __name__ == "__main__":
     debounce_threshold = 10  # Minimum frames for stable recognition
     mode_change_threshold = 15  # Minimum frames for stable mode change
     detected_gesture = None
+    modes = ["Hand Detection", "Face Tracking", "Hand and Face Detection"]
 
     while True:
         ret, img = cap.read()
@@ -193,7 +194,7 @@ if __name__ == "__main__":
                     
                     debounce_counts["mode"] += 1
                     if debounce_counts["mode"] >= mode_change_threshold:
-                        current_mode += 1 % 3
+                        current_mode = (current_mode+1) % 3
                         debounce_counts["mode"] = 0
 
                 # Debouncing logic
@@ -204,10 +205,14 @@ if __name__ == "__main__":
                             debounce_counts[gesture] = max(0, debounce_counts[gesture] - 1)
                 else:
                     for gesture in list(debounce_counts):
+                        if gesture == "mode":
+                            continue
                         debounce_counts[gesture] = max(0, debounce_counts[gesture] - 1)
 
                 # Recognize gesture if it exceeds debounce threshold
                 for gesture, count in debounce_counts.items():
+                    if gesture == "mode":
+                        continue
                     if count >= debounce_threshold:
                         detected_gesture = gesture
                         debounce_counts[gesture] = debounce_threshold - 3  # Remove 3 from counter for faster detection
@@ -218,11 +223,11 @@ if __name__ == "__main__":
                                 (0, 0, 255), 3)
 
                 # Display current mode
-                cv2.putText(img, f"Mode: {current_mode}", (20, 65), cv2.FONT_HERSHEY_SIMPLEX, 1,
+                cv2.putText(img, f"Mode: {modes[current_mode]}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                     (0, 0, 255), 3)
 
                 # Display drone position
-                cv2.putText(img, f"({drone.x} , {drone.y}, {drone.z})", (20, 30),
+                cv2.putText(img, f"({drone.x} , {drone.y}, {drone.z})", (20, 65),
                             cv2.FONT_HERSHEY_SIMPLEX, 1,
                             (0, 0, 255), 3)
                 
