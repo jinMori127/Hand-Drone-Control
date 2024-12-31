@@ -191,7 +191,7 @@ if __name__ == "__main__":
                 for gesture, count in debounce_counts.items():
                     if count >= debounce_threshold:
                         detected_gesture = gesture
-                        debounce_counts[gesture] = 0  # Reset count after recognition
+                        debounce_counts[gesture] = debounce_threshold - 3  # Remove 3 from counter for faster detection
 
                 # Display recognized gesture
                 if detected_gesture:
