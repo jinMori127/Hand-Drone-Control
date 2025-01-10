@@ -4,7 +4,8 @@ from dataclasses import dataclass
 import numpy as np
 from prompt_toolkit.key_binding.bindings.named_commands import forward_word
 
-FORWARD_BACKWARD_RANGE = [6280, 6880]
+FORWARD_BACKWARD_RANGE = [22330, 24500]
+#FORWARD_BACKWARD_RANGE = [12330, 14500]
 
 
 @dataclass
@@ -18,7 +19,7 @@ class Movement:
 def findFace(img):
     faceCaseade = cv2.CascadeClassifier('resources/haarcascade_frontalface_default.xml')
     imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = faceCaseade.detectMultiScale(imgGray, 1.2, 8)
+    faces = faceCaseade.detectMultiScale(imgGray, 1.1, 10)
 
     myFaces = []
     myFaceListArea = []
@@ -79,28 +80,30 @@ def mode_2(tello, info, width, pid, p_error):
     brief: this function will track the face and keep the drone in the center of the face
     """
     x, y = info[0]
+    area = info[1]
 
     # How far away is the object of the center.
     error = x - width // 2
     speed = pid[0] * error + pid[1] * (error - p_error)
-    speed = int(np.clip(speed, -10, 10))
-    area = info[1]
+    speed = int(np.clip(speed, -100, 100))
 
-    forward_backward = None
+    print(area)
+    forward_backward = 0
     if FORWARD_BACKWARD_RANGE[0] < area < FORWARD_BACKWARD_RANGE[1]:
         forward_backward = 0
     # Check that the face area is in the wanted range
     elif area > FORWARD_BACKWARD_RANGE[1]:
-        forward_backward = -10
-    elif area > FORWARD_BACKWARD_RANGE[0] and area != 0:
-        forward_backward = 10
+        forward_backward = -20 # move backward
+    elif area < FORWARD_BACKWARD_RANGE[0] and area != 0:
+        forward_backward = 20 #move forward
 
     if x == 0:
         speed = 0
         error = 0
 
     # if forward_backward is not None:
-    tello.send_rc_control(0, forward_backward, 0, speed)
+    print(f"({0}, {forward_backward}, {0}, {speed})")
+    tello.send_rc_control(0, forward_backward, 0, -speed)
     return error
 
 
@@ -112,7 +115,7 @@ def mode_3(detected_gesture, info, drone, img_shape):
            movement according to the detected gesture
     """
     # hand detection
-    mode_1(drone, detected_gesture)
+    # mode_1(drone, detected_gesture)
     # face tracking
-    steps_x, steps_y = mode_2(info, drone, img_shape)
-    return steps_x, steps_y
+    # steps_x, steps_y = mode_2(info, drone, img_shape)
+    return 0

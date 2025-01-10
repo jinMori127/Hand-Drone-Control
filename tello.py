@@ -10,12 +10,12 @@ if __name__ == "__main__":
     try:
         tello.connect()
         tello.streamon()
-
+        # print(tello.get_battery())
         tello.takeoff()
 
         # Go up to the height of the person
         tello.send_rc_control(0, 0, 25, 0)
-        sleep(2.3)
+        sleep(2.5)
         # turn the camera on
 
         mp_hands = mp.solutions.hands
@@ -42,7 +42,7 @@ if __name__ == "__main__":
             Define constants for mode 2 (face detection).
         """
         w, h = 640, 480
-        pid = [0.4, 0.4, 0]
+        pid = [0.35, 0.3, 0]
         p_error = 0
 
         # Debounce variables
@@ -75,12 +75,11 @@ if __name__ == "__main__":
                 p_error = mode_2(tello=tello, info=info, width=w, pid=pid, p_error=p_error)
                 detected_gesture = None
 
-            elif current_mode == 2:
-                face_x, face_y = info[0]  # Face center coordinates
-                # steps_x, steps_y = mode_3(detected_gesture, info, tello, img.shape)
-                detected_gesture = None
+            # elif current_mode == 2:
+            #     face_x, face_y = info[0]  # Face center coordinates
+            #     # steps_x, steps_y = mode_3(detected_gesture, info, tello, img.shape)
+            #     detected_gesture = None
 
-            h, w, c = img.shape
             results = hands.process(img)
 
             if results.multi_hand_landmarks:
