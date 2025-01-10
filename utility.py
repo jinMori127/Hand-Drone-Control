@@ -5,7 +5,9 @@ import numpy as np
 from prompt_toolkit.key_binding.bindings.named_commands import forward_word
 
 FORWARD_BACKWARD_RANGE = [22330, 24500]
-#FORWARD_BACKWARD_RANGE = [12330, 14500]
+
+
+# FORWARD_BACKWARD_RANGE = [12330, 14500]
 
 
 @dataclass
@@ -93,9 +95,9 @@ def mode_2(tello, info, width, pid, p_error):
         forward_backward = 0
     # Check that the face area is in the wanted range
     elif area > FORWARD_BACKWARD_RANGE[1]:
-        forward_backward = -20 # move backward
+        forward_backward = -20  # move backward
     elif area < FORWARD_BACKWARD_RANGE[0] and area != 0:
-        forward_backward = 20 #move forward
+        forward_backward = 20  # move forward
 
     if x == 0:
         speed = 0
@@ -107,15 +109,24 @@ def mode_2(tello, info, width, pid, p_error):
     return error
 
 
-def mode_3(detected_gesture, info, drone, img_shape):
-    """
-    :param detected_gesture: the detected gesture from the hand detection
-    :param info: the info of the face detected [center of the face, area of the face]
-    brief: this function will track the face and keep the drone in the center of the face and combine it with the drone
-           movement according to the detected gesture
-    """
-    # hand detection
-    # mode_1(drone, detected_gesture)
-    # face tracking
-    # steps_x, steps_y = mode_2(info, drone, img_shape)
-    return 0
+def mode_3(tello, info, width, pid, p_error, detected_gesture: str):
+    # If we detect a gesture apply it.
+    if detected_gesture is not None:
+        mode_1(tello, detected_gesture)
+        detected_gesture = None
+
+    # now move the yaw to keep the face always in the middle of hte picture.
+    x, y = info[0]
+    area = info[1]
+
+    # How far away is the object of the center.
+    error = x - width // 2
+    speed = pid[0] * error + pid[1] * (error - p_error)
+    speed = int(np.clip(speed, -100, 100))
+    if x == 0:
+        speed = 0
+        error = 0
+
+    tello.send_rc_control(0, 0, 0, -speed)
+
+    return error

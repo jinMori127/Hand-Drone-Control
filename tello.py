@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
         # Go up to the height of the person
         tello.send_rc_control(0, 0, 25, 0)
-        sleep(2.5)
+        sleep(2.7)
         # turn the camera on
 
         mp_hands = mp.solutions.hands
@@ -75,10 +75,8 @@ if __name__ == "__main__":
                 p_error = mode_2(tello=tello, info=info, width=w, pid=pid, p_error=p_error)
                 detected_gesture = None
 
-            # elif current_mode == 2:
-            #     face_x, face_y = info[0]  # Face center coordinates
-            #     # steps_x, steps_y = mode_3(detected_gesture, info, tello, img.shape)
-            #     detected_gesture = None
+            elif current_mode == 2:
+                mode_3(tello=tello, info=info, width=w, pid=pid, p_error=p_error, detected_gesture=detected_gesture)
 
             results = hands.process(img)
 
