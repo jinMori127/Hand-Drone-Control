@@ -1,3 +1,5 @@
+from cProfile import label
+
 import cv2
 
 '''
@@ -9,14 +11,7 @@ import mediapipe as mp
 from djitellopy import Tello
 from time import sleep
 from utility import *
-
-
-def right_hand_recognition(lm_list: list) -> str:
-    pass
-
-
-def left_hand_recognition(lm_list: list) -> str:
-    pass
+import hand_recognition as hr
 
 
 if __name__ == "__main__":
@@ -88,9 +83,8 @@ if __name__ == "__main__":
                     used_hand = hand_handedness.classification[0].label  # Left or Right
                     horizontal_fingers = []
                     up_fingers = []
+                    down_fingers = []
                     lm_list = []
-
-                    current_gesture = None
 
 
                     '''
@@ -100,58 +94,51 @@ if __name__ == "__main__":
                     for id, lm in enumerate(hand_landmark.landmark):
                         lm_list.append(lm)
 
-                    # Detect folded fingers when left hand is pointing right, used for Up and Down
-                    for tip in finger_tips:
-                        horizontal_fingers.append(lm_list[tip].x < lm_list[tip - 2].x)
-
-                    # Detect folded fingers when hand is pointing up, used for Mode Change
-                    up_fingers.append(lm_list[4].x < lm_list[3].x and lm_list[3].x < lm_list[2].x and lm_list[2].x < lm_list[1].x) # thumb needs special case, uses X
-                    for tip in finger_tips:
-                        up_fingers.append(lm_list[tip].y < lm_list[tip-1].y and lm_list[tip-1].y < lm_list[tip-2].y and lm_list[tip-2].y < lm_list[tip-3].y)
-
+                    # Up thumb means that the hand is horizontal and the thumb is up.
                     up_thumb = lm_list[4].y < lm_list[3].y and lm_list[3].y < lm_list[2].y and lm_list[2].y < lm_list[1].y
                     down_thumb = lm_list[4].y > lm_list[3].y and lm_list[3].y > lm_list[2].y and lm_list[2].y > lm_list[1].y
 
+                    # Detect up thumb and horizontal fingers differently
+                    if used_hand == "Right":
+                        up_fingers.append(lm_list[4].x > lm_list[3].x and lm_list[3].x > lm_list[2].x and lm_list[2].x > lm_list[1].x) # thumb needs special case, uses X
+                        down_fingers.append(up_fingers[0])
+
+                        for tip in finger_tips: # Detect folded fingers when right hand is pointing left, used for Up and Down
+                            horizontal_fingers.append(lm_list[tip].x > lm_list[tip - 2].x)
+
+                    elif used_hand == "Left":
+                        up_fingers.append(lm_list[4].x < lm_list[3].x and lm_list[3].x < lm_list[2].x and lm_list[2].x < lm_list[1].x) # thumb needs special case, uses X
+                        down_fingers.append(up_fingers[0])
+
+                        for tip in finger_tips: # Detect folded fingers when left hand is pointing right, used for Up and Down
+                            horizontal_fingers.append(lm_list[tip].x < lm_list[tip - 2].x)
+
+                    for tip in finger_tips: # Add every other finger pointing up
+                        up_fingers.append(lm_list[tip].y < lm_list[tip-1].y and lm_list[tip-1].y < lm_list[tip-2].y and lm_list[tip-2].y < lm_list[tip-3].y)
+                        down_fingers.append(lm_list[tip].y > lm_list[tip-1].y and lm_list[tip-1].y > lm_list[tip-2].y and lm_list[tip-2].y > lm_list[tip-3].y)
+
+                    for i, finger in enumerate(up_fingers):
+                        if finger:
+                            print(f"Finger {i+1}: {finger}")
 
                     '''
                         Gesture processing
                     '''
+                    print("Hand: ", used_hand, "")
+                    current_gesture = None
+                    if(used_hand == "Right"):
+                        current_gesture = hr.right_hand_recognition(lm_list=lm_list,
+                                                  horizontal_fingers=horizontal_fingers,
+                                                  up_thumb=up_thumb, down_thumb=down_thumb, up_fingers=up_fingers,
+                                                                    down_fingers = down_fingers)
 
-                    if lm_list[4].y < lm_list[2].y and lm_list[8].y < lm_list[6].y and lm_list[12].y < lm_list[10].y and \
-                            lm_list[16].y < lm_list[14].y and lm_list[20].y < lm_list[18].y and lm_list[17].x < lm_list[
-                        0].x < lm_list[5].x:
-                        current_gesture = "Stop"
-
-                    # Forward
-                    if lm_list[3].x > lm_list[4].x and lm_list[8].y < lm_list[6].y and lm_list[12].y > lm_list[10].y and \
-                            lm_list[16].y > lm_list[14].y and lm_list[20].y > lm_list[18].y:
-                        current_gesture = "Forward"
-
-                    # Backward
-                    if lm_list[3].x > lm_list[4].x and lm_list[3].y < lm_list[4].y and lm_list[8].y > lm_list[6].y and \
-                            lm_list[12].y < lm_list[10].y and \
-                            lm_list[16].y < lm_list[14].y and lm_list[20].y < lm_list[18].y:
-                        current_gesture = "Backward"
-
-                    # Left
-                    if lm_list[4].y < lm_list[2].y and lm_list[8].x < lm_list[6].x and lm_list[12].x > lm_list[10].x and \
-                            lm_list[16].x > lm_list[14].x and lm_list[20].x > lm_list[18].x and lm_list[5].x < lm_list[
-                        0].x:
-                        current_gesture = "Right"  # drone's right
-
-                    # Right
-                    if lm_list[4].y < lm_list[2].y and lm_list[8].x > lm_list[6].x and lm_list[12].x < lm_list[10].x and \
-                            lm_list[16].x < lm_list[14].x and lm_list[20].x < lm_list[18].x:
-                        current_gesture = "Left"  # drone's left
-
-                    # Up - Down
-                    if all(horizontal_fingers):
-
-                        if up_thumb:
-                            current_gesture = "Up"
-
-                        if down_thumb:
-                            current_gesture = "Down"
+                    elif(used_hand == "Left"):
+                        current_gesture = hr.left_hand_recognition(lm_list=lm_list,
+                                                  horizontal_fingers=horizontal_fingers,
+                                                  up_thumb=up_thumb,
+                                                  down_thumb=down_thumb,
+                                                  up_fingers=up_fingers,
+                                                                    down_fingers = down_fingers)
 
                     # Mode
                     if not up_fingers[0] and up_fingers[1] and not up_fingers[2] and not up_fingers[3] and up_fingers[4]:
