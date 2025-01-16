@@ -2,7 +2,6 @@ import cv2
 from time import sleep
 from dataclasses import dataclass
 import numpy as np
-from prompt_toolkit.key_binding.bindings.named_commands import forward_word
 
 FORWARD_BACKWARD_RANGE = [22330, 24500]
 
