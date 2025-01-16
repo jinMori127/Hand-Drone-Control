@@ -1,56 +1,61 @@
 import cv2
+
+'''
+    mode 1 : for the hand detection 
+    mode 2 : for the face tracking
+    mode 3 : for the hand and face detection
+'''
 import mediapipe as mp
 from djitellopy import Tello
 from time import sleep
 from utility import *
 
-if __name__ == "__main__":
-    tello = Tello()
 
+def right_hand_recognition(lm_list: list) -> str:
+    pass
+
+
+def left_hand_recognition(lm_list: list) -> str:
+    pass
+
+
+if __name__ == "__main__":
+
+    mp_hands = mp.solutions.hands
+    hands = mp_hands.Hands(  # Parameters for the hand model
+        static_image_mode=False,
+        max_num_hands=1,  # Increase if multiple hands might be detected
+        min_detection_confidence=0.3,  # Lower this value if far hands are hard to detect
+        min_tracking_confidence=0.3  # Lower this for better tracking at a distance
+    )
+    mp_draw = mp.solutions.drawing_utils
+
+    # General variables
+    finger_tips = [8, 12, 16, 20]
+    thumb_tip = 4
+    steps_x, steps_y = 0, 0  # to center the face
+    current_mode = 0
+    w, h = 640, 480
+    pid = [0.35, 0.3, 0]
+    p_error = 0
+
+    # Debounce variables
+    debounce_counts = {"mode": 0}  # Track how many consecutive frames a gesture is detected
+    debounce_threshold = 10  # Minimum frames for stable recognition
+    mode_change_threshold = 20  # Minimum frames for stable mode change
+    detected_gesture = None
+    modes = ["Hand Detection", "Face Tracking", "Hand and Face Detection"]
+
+    tello = Tello()
     try:
+
         tello.connect()
-        tello.streamon()
-        # print(tello.get_battery())
+        tello.streamon()  # turn the camera on
         tello.takeoff()
 
         # Go up to the height of the person
         tello.send_rc_control(0, 0, 25, 0)
         sleep(2.7)
-        # turn the camera on
-
-        mp_hands = mp.solutions.hands
-        hands = mp_hands.Hands(
-            static_image_mode=False,
-            max_num_hands=1,  # Increase if multiple hands might be detected
-            min_detection_confidence=0.3,  # Lower this value if far hands are hard to detect
-            min_tracking_confidence=0.3  # Lower this for better tracking at a distance
-        )
-
-        '''
-            mode 1 : for the hand detection 
-            mode 2 : for the face tracking
-            mode 3 : for the hand and face detection
-        '''
-        mp_draw = mp.solutions.drawing_utils
-
-        finger_tips = [8, 12, 16, 20]
-        thumb_tip = 4
-        steps_x, steps_y = 0, 0  # to center the face
-        current_mode = 0
-
-        """
-            Define constants for mode 2 (face detection).
-        """
-        w, h = 640, 480
-        pid = [0.35, 0.3, 0]
-        p_error = 0
-
-        # Debounce variables
-        debounce_counts = {"mode": 0}  # Track how many consecutive frames a gesture is detected
-        debounce_threshold = 10  # Minimum frames for stable recognition
-        mode_change_threshold = 20  # Minimum frames for stable mode change
-        detected_gesture = None
-        modes = ["Hand Detection", "Face Tracking", "Hand and Face Detection"]
 
         while True:
             img = tello.get_frame_read().frame
@@ -58,13 +63,8 @@ if __name__ == "__main__":
             img = cv2.flip(img, 1)
 
             # Display current mode
-            cv2.putText(img, f"Mode: {modes[current_mode]}", (20, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8,
-                        (0, 0, 255), 2)
-
-            info = None
-            # Only get the face info in mode 1 and 2.
-            if current_mode in [1, 2]:
-                img, info = findFace(img)
+            cv2.putText(img, f"Mode: {modes[current_mode]}", (20, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
 
             # Mode logic
             if current_mode == 0:
@@ -72,35 +72,34 @@ if __name__ == "__main__":
                 detected_gesture = None
 
             elif current_mode == 1:
-                p_error = mode_2(tello=tello, info=info, width=w, pid=pid, p_error=p_error)
                 detected_gesture = None
+                img, info = findFace(img)
+                p_error = mode_2(tello=tello, info=info, width=w, pid=pid, p_error=p_error)
 
             elif current_mode == 2:
+                img, info = findFace(img)
                 mode_3(tello=tello, info=info, width=w, pid=pid, p_error=p_error, detected_gesture=detected_gesture)
 
             results = hands.process(img)
 
-            if results.multi_hand_landmarks:
-                for hand_landmark in results.multi_hand_landmarks:
+            if results.multi_hand_landmarks and results.multi_handedness:
+                for hand_landmark, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):  # REMOVE FOR
                     lm_list = []
+                    finger_fold_status = []
+                    used_hand = hand_handedness.classification[0].label  # Left or Right
+
+                    # Extract each finger
                     for id, lm in enumerate(hand_landmark.landmark):
                         lm_list.append(lm)
-                    finger_fold_status = []
+
+                    # Extract x,y of finger tips
                     for tip in finger_tips:
                         x, y = int(lm_list[tip].x * w), int(lm_list[tip].y * h)
-                        # print(id, ":", x, y)
-                        # cv2.circle(img, (x, y), 15, (255, 0, 0), cv2.FILLED)
 
                         if lm_list[tip].x < lm_list[tip - 2].x:
-                            # cv2.circle(img, (x, y), 15, (0, 255, 0), cv2.FILLED)
                             finger_fold_status.append(True)
                         else:
                             finger_fold_status.append(False)
-
-                    # print(finger_fold_status)
-
-                    x, y = int(lm_list[8].x * w), int(lm_list[8].y * h)
-                    # print(x, y)
 
                     # Gesture recognition logic
                     current_gesture = None
@@ -124,35 +123,39 @@ if __name__ == "__main__":
 
                     # Left
                     if lm_list[4].y < lm_list[2].y and lm_list[8].x < lm_list[6].x and lm_list[12].x > lm_list[10].x and \
-                            lm_list[16].x > lm_list[14].x and lm_list[20].x > lm_list[18].x and lm_list[5].x < lm_list[0].x:
-                        current_gesture = "Right" # drone's right
+                            lm_list[16].x > lm_list[14].x and lm_list[20].x > lm_list[18].x and lm_list[5].x < lm_list[
+                        0].x:
+                        current_gesture = "Right"  # drone's right
 
                     # Right
                     if lm_list[4].y < lm_list[2].y and lm_list[8].x > lm_list[6].x and lm_list[12].x < lm_list[10].x and \
                             lm_list[16].x < lm_list[14].x and lm_list[20].x < lm_list[18].x:
-                        current_gesture = "Left" # drone's left
+                        current_gesture = "Left"  # drone's left
 
-                    up_thumb = lm_list[4].y < lm_list[3].y and lm_list[3].y < lm_list[2].y and lm_list[2].y < lm_list[1].y
-                    down_thumb = lm_list[4].y > lm_list[3].y and lm_list[3].y > lm_list[2].y and lm_list[2].y > lm_list[1].y
+                    up_thumb = lm_list[4].y < lm_list[3].y and lm_list[3].y < lm_list[2].y and lm_list[2].y < lm_list[
+                        1].y
+                    down_thumb = lm_list[4].y > lm_list[3].y and lm_list[3].y > lm_list[2].y and lm_list[2].y > lm_list[
+                        1].y
 
                     if all(finger_fold_status):
 
                         if up_thumb:
-                        # if lm_list[thumb_tip].y < lm_list[thumb_tip - 1].y < lm_list[thumb_tip - 2].y and lm_list[0].x < \
-                        #         lm_list[3].y:
                             current_gesture = "Up"
 
                         if down_thumb:
-                        # if lm_list[thumb_tip].y > lm_list[thumb_tip - 1].y > lm_list[thumb_tip - 2].y and lm_list[0].x < \
-                        #         lm_list[3].y:
                             current_gesture = "Down"
 
                     # Change mode
-                    up_finger1 = lm_list[4].x <  lm_list[3].x and lm_list[3].x <  lm_list[2].x and lm_list[2].x <  lm_list[1].x
-                    up_finger2 = lm_list[8].y <  lm_list[7].y and lm_list[7].y <  lm_list[6].y and lm_list[6].y <  lm_list[5].y
-                    up_finger3 = lm_list[12].y <  lm_list[11].y and lm_list[11].y <  lm_list[10].y and lm_list[10].y <  lm_list[9].y
-                    up_finger4 = lm_list[16].y <  lm_list[15].y and lm_list[15].y <  lm_list[14].y and lm_list[14].y <  lm_list[13].y
-                    up_finger5 = lm_list[20].y <  lm_list[19].y and lm_list[19].y <  lm_list[18].y and lm_list[18].y <  lm_list[17].y
+                    up_finger1 = lm_list[4].x < lm_list[3].x and lm_list[3].x < lm_list[2].x and lm_list[2].x < lm_list[
+                        1].x
+                    up_finger2 = lm_list[8].y < lm_list[7].y and lm_list[7].y < lm_list[6].y and lm_list[6].y < lm_list[
+                        5].y
+                    up_finger3 = lm_list[12].y < lm_list[11].y and lm_list[11].y < lm_list[10].y and lm_list[10].y < \
+                                 lm_list[9].y
+                    up_finger4 = lm_list[16].y < lm_list[15].y and lm_list[15].y < lm_list[14].y and lm_list[14].y < \
+                                 lm_list[13].y
+                    up_finger5 = lm_list[20].y < lm_list[19].y and lm_list[19].y < lm_list[18].y and lm_list[18].y < \
+                                 lm_list[17].y
 
                     up_fingers = [up_finger1, up_finger2, up_finger3, up_finger4, up_finger5]
                     for i, finger in enumerate(up_fingers):
@@ -160,9 +163,6 @@ if __name__ == "__main__":
                             print(f"Finger{i}")
 
                     if not up_finger1 and up_finger2 and not up_finger3 and not up_finger4 and up_finger5:
-                    #if lm_list[3].x > lm_list[4].x and lm_list[8].y < lm_list[6].y and lm_list[12].y > lm_list[
-                        # 10].y and \
-                        #     lm_list[16].y > lm_list[14].y and lm_list[20].y < lm_list[18].y:
 
                         debounce_counts["mode"] += 1
                         if debounce_counts["mode"] >= mode_change_threshold:
