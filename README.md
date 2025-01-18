@@ -17,7 +17,7 @@ compared to the previous years.
 1. Clone the repo:  
     `git clone https://github.com/jinMori127/Hand-Drone-Control.git`
 2. Install the required packages:  
-   `pip install -r requirements.txt`  
+   `pip install -r requirement.txt`  
 
 **Note:** Our code works on tello drone, so to run it you need to have a drone that compatible with  
 `djitellopy` library else you will need to change the commands that related to the drone movement.
