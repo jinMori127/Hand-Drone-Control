@@ -1,5 +1,6 @@
 
 .idea/vcs.xml
 .idea/
-__pycache__/utility.cpython-38.pyc
-__pycache__/hand_recognition.cpython-38.pyc
+__pycache__/
+*.pyc
+
