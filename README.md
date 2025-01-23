@@ -82,7 +82,8 @@ In this mode the drone will detect hand signs and follow the corresponding comma
 The drone supports both left and right hand control, only one hand is detected at a time.
 ### Second mode: Face following
 In this mode the drone will follow your face and move accordingly, the face will always be in the middle of the frame.
-- insert demo
+
+![facre_tracking-ezgif.com-optimize.gif](Images/facre_tracking.gif)
 
 The drone detects the closest face and follows it.
 
@@ -102,3 +103,8 @@ as it has a 90% accuracy for frontal face detection, also we will always follow 
 <div align="center"> <img src="Images/img_1.png" alt="Face Tracking Illustration" width="650px"> </div>
 
 To keep the face in the center we used **PID** which will help us to decide how much we should move each time.
+
+## Links and recourses:
+Link to the demo [videos&more](https://drive.google.com/drive/folders/1JM4UuwiDeZ3oaseenFLFOIyCVz99bPyN?usp=sharing)  
+Sami Serhan: Samii.serhan@gmail.com  
+Abbas Ismail: abbasismail172@gmail.com 
