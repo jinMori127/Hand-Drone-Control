@@ -34,8 +34,50 @@ compared to the previous years.
 ### First mode: Hand gesture control
 In this mode the drone will detect hand signs and follow the corresponding command, The commands are:
 
-- Insert table of gestures
-- Insert domo
+#### Gesture guide
+
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="Images/hand_gestures/up.jpg" alt="Up Gesture" width="100px"><br>
+        <b>Up</b>
+      </td>
+      <td align="center">
+        <img src="Images/hand_gestures/down.jpg" alt="Down Gesture" width="100px"><br>
+        <b>Down</b>
+      </td>
+      <td align="center">
+        <img src="Images/hand_gestures/left.jpg" alt="Left Gesture" width="100px"><br>
+        <b>Left</b>
+      </td>
+      <td align="center">
+        <img src="Images/hand_gestures/right.jpg" alt="Right Gesture" width="100px"><br>
+        <b>Right</b>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
+        <img src="Images/hand_gestures/forward.jpg" alt="Forward Gesture" width="100px"><br>
+        <b>Forward</b>
+      </td>
+      <td align="center">
+        <img src="Images/hand_gestures/backward.jpg" alt="Backward Gesture" width="100px"><br>
+        <b>Backward</b>
+      </td>
+      <td align="center">
+        <img src="Images/hand_gestures/mode.jpg" alt="Mode Gesture" width="100px"><br>
+        <b>Mode</b>
+      </td>
+      <td align="center">
+        <img src="Images/hand_gestures/stop.jpg" alt="Stop Gesture" width="100px"><br>
+        <b>Stop</b>
+      </td>
+    </tr>
+  </table>
+</div>
+
+![Gesture_Demo.gif](Images/Gesture_Demo.gif)
 
 The drone supports both left and right hand control, only one hand is detected at a time.
 ### Second mode: Face following
@@ -60,4 +102,3 @@ as it has a 90% accuracy for frontal face detection, also we will always follow 
 <div align="center"> <img src="Images/img_1.png" alt="Face Tracking Illustration" width="650px"> </div>
 
 To keep the face in the center we used **PID** which will help us to decide how much we should move each time.
-
