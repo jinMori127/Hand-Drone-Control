@@ -4,10 +4,12 @@
 Traditional methods of drone control, such as remote controllers and mobile
 applications, require substantial manual input and expertise, limiting their
 accessibility and usability for the usual individual. Not only that, but in some cases
-carrying a remote controller on-set can be troublesome, for example filming while
-standing in a pool of water, or when the remote controller is broken etc.
+carrying a remote controller on-set can be troublesome, like when were filming while
+standing in a pool of water, or when the remote controller is broken etc. 
+
 To solve that, we will design **Hand Gesture Control &amp; Face tracking control-based
 modes to make drone controlling more user-friendly and intuitive.**   
+
 Currently (almost) every individual has experienced using technology that takes touch as an input like a
 keyboard or a smartphone, which means that basing such a complicated task of
 drone controlling on hand gestures will be significantly easier to do in our age
@@ -20,7 +22,7 @@ compared to the previous years.
    `pip install -r requirement.txt`  
 
 **Note:** Our code works on tello drone, to run the code you need to have a drone that is compatible with the  
-`djitellopy` library, otherwise you will need to change the commands that flight commands.
+`djitellopy` library, otherwise you will need to change the code section that sends flight commands.
 
 ## How to run & use:
 
@@ -93,23 +95,24 @@ The drone will detect hand gestures and perform the corresponding commands.
 - insert demo.
 
 ## Strategy and algorithms used:
-- **Hand landmark:** we used the pretrained network of MidiaPipe which give a very good results for doing that.
-- **Hand gesture recognition:** For that we took the landmark and apply some checks on it, since we have a lot of frames 
+- **Hand landmark:** we used the pretrained network of MidiaPipe to detect hand gestures, which provided accurate results.
+- **Hand gesture recognition:** After detecting the landmark we run some checks to recognize the command, this was based on checking coordinates of each vertex in the landmark. since we have a lot of frames 
 we used the debouncing mechanism to enhance the stability of the recognition.  
-    - debouncing mechanism: for each label will be a `threshold` and when `debounce[gesture] >= threshold` we will take it as a recognized gesture and set it back to 0.  
-      for each other label that not recognized at the current frame we will subtract one from it's `debounce[other_gesture]`.
--  **Face tracking:** Track the faces using cv2 library `cv2.CascadeClassifier` which is  considered a good classifier for out task 
-as it has a 90% accuracy for frontal face detection, also we will always follow the closest face to the camera since we can detect multiple faces.  
-We used the face area keep the same distance between the face and the drone even if we move back and forth the drone will stay at the distance 
-that keep the face area between `min_area < face_area < max_area` if we get closer it goes back and if we get farther the area of the face get smaller and the drone will follow.  
+    - debouncing mechanism: for each gestures theres a label, and for each label there js a `threshold` counrer. When `debounce[gesture] >= threshold` we will mark it as a recognized gesture and set itd threshold counter back to 0 and send the corresponding flight command.  
+      for each other label that is not recognized at the current frame we will subtract one from it's `threshold` counter.
+-  **Face tracking:** Track the faces using cv2 library `cv2.CascadeClassifier` which is  considered a good classifier for out task as it has a 90% accuracy for frontal face detection. We will always follow the closest face to the camera since we can detect multiple faces.  
+We used the face area to keep the same distance between the face and the drone, the drone will stay at the distance that keeps the face area between `min_area < face_area < max_area`.
+If we get closer to the drone it goes back and if we get farther the drone will move forward.
+This is done by calculating the area of the face-detection square and adjusting the distance of the drone accordingly to the area thresholds.
 
 <div align="center"> <img src="Images/img_1.png" alt="Face Tracking Illustration" width="650px"> </div>
 
-To keep the face in the center we used **PID** which will help us to decide how much we should move each time:  
+-  To keep the face in the center we used **PID** which will help us decide how we should rotate the drone:  
   ```
    error = face_center_x - width // 2
    yaw_movment = pid[0] * error + pid[1] * (error - p_error)
    ```
+
 
 ## Links and recourses:
 Link to the demo [videos&more](https://drive.google.com/drive/folders/1JM4UuwiDeZ3oaseenFLFOIyCVz99bPyN?usp=sharing)  
