@@ -100,9 +100,16 @@ we used the debouncing mechanism to enhance the stability of the recognition.
       for each other label that not recognized at the current frame we will subtract one from it's `debounce[other_gesture]`.
 -  **Face tracking:** Track the faces using cv2 library `cv2.CascadeClassifier` which is  considered a good classifier for out task 
 as it has a 90% accuracy for frontal face detection, also we will always follow the closest face to the camera since we can detect multiple faces.  
+We used the face area keep the same distance between the face and the drone even if we move back and forth the drone will stay at the distance 
+that keep the face area between `min_area < face_area < max_area` if we get closer it goes back and if we get farther the area of the face get smaller and the drone will follow.  
+
 <div align="center"> <img src="Images/img_1.png" alt="Face Tracking Illustration" width="650px"> </div>
 
-To keep the face in the center we used **PID** which will help us to decide how much we should move each time.
+To keep the face in the center we used **PID** which will help us to decide how much we should move each time:  
+  ```
+   error = face_center_x - width // 2
+   yaw_movment = pid[0] * error + pid[1] * (error - p_error)
+   ```
 
 ## Links and recourses:
 Link to the demo [videos&more](https://drive.google.com/drive/folders/1JM4UuwiDeZ3oaseenFLFOIyCVz99bPyN?usp=sharing)  
