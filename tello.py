@@ -29,7 +29,6 @@ if __name__ == "__main__":
     # General variables
     finger_tips = [8, 12, 16, 20]
     thumb_tip = 4
-    steps_x, steps_y = 0, 0  # to center the face
     current_mode = 0
     w, h = 640, 480
     pid = [0.35, 0.3, 0]
@@ -141,6 +140,8 @@ if __name__ == "__main__":
                         if gesture == "Mode" and count >= mode_change_threshold:
                             current_mode = (current_mode + 1) % 3
                             debounce_counts["Mode"] = 0
+                            # Mode changed reset the error
+                            p_error = 0
                             detected_gesture = gesture
 
                         elif count >= debounce_threshold:
