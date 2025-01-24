@@ -116,7 +116,6 @@ def mode_3(tello, info, width, pid, p_error, detected_gesture: str):
 
     # now move the yaw to keep the face always in the middle of hte picture.
     x, y = info[0]
-    area = info[1]
 
     # How far away is the object of the center.
     error = x - width // 2

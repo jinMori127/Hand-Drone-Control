@@ -74,7 +74,7 @@ if __name__ == "__main__":
 
             elif current_mode == 2:
                 img, info = findFace(img)
-                mode_3(tello=tello, info=info, width=w, pid=pid, p_error=p_error, detected_gesture=detected_gesture)
+                p_error = mode_3(tello=tello, info=info, width=w, pid=pid, p_error=p_error, detected_gesture=detected_gesture)
 
             results = hands.process(img)
 
