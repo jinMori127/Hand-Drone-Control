@@ -3,7 +3,7 @@ from time import sleep
 from dataclasses import dataclass
 import numpy as np
 
-FORWARD_BACKWARD_RANGE = [22330, 24500]
+FORWARD_BACKWARD_RANGE = [22000, 24000]
 
 
 # FORWARD_BACKWARD_RANGE = [12330, 14500]
@@ -40,8 +40,9 @@ def findFace(img):
         return img, [[0, 0], 0]
 
 
-def mode_1(tello, detected_gesture: str):
+def mode_1(tello, detected_gesture: str, do_sleep: bool = True):
     """
+    :param do_sleep: tells the drone if to sleep or not when move
     :param tello: the Drone object
     :param detected_gesture: the detected gesture from the hand detection
     brief: this function will move the drone according to the detected gesture
@@ -67,11 +68,12 @@ def mode_1(tello, detected_gesture: str):
     elif detected_gesture == "Stop":
         movement.yaw_velocity = tello.land()
 
-    tello.send_rc_control(movement.left_right,
-                          movement.forward_backward,
-                          movement.up_down,
-                          movement.yaw_velocity)
-    sleep(0.05)
+    if do_sleep:
+        tello.send_rc_control(movement.left_right,
+                              movement.forward_backward,
+                              movement.up_down,
+                              movement.yaw_velocity)
+        sleep(0.05)
     return movement
 
 
@@ -109,10 +111,7 @@ def mode_2(tello, info, width, pid, p_error):
 
 
 def mode_3(tello, info, width, pid, p_error, detected_gesture: str):
-    # If we detect a gesture apply it.
-    if detected_gesture is not None:
-        mode_1(tello, detected_gesture)
-        detected_gesture = None
+    """Center the face and then apply the detected gesture according to the detected_gesture"""
 
     # now move the yaw to keep the face always in the middle of hte picture.
     x, y = info[0]
@@ -125,6 +124,14 @@ def mode_3(tello, info, width, pid, p_error, detected_gesture: str):
         speed = 0
         error = 0
 
-    tello.send_rc_control(0, 0, 0, -speed)
+    movement = Movement(left_right=0, forward_backward=0, up_down=0, yaw_velocity=-speed)
+    if detected_gesture is not None:
+        movee2 = mode_1(tello=tello, detected_gesture=detected_gesture, do_sleep=False)
+        movement.left_right = movee2.left_right
+        movement.forward_backward = movee2.forward_backward
+        movement.up_down = movee2.up_down
+
+    tello.send_rc_control(movement.left_right, movement.forward_backward, movement.up_down, movement.yaw_velocity)
+    sleep(0.05)
 
     return error

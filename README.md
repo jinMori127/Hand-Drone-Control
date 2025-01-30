@@ -92,7 +92,7 @@ The drone detects the closest face and follows it.
 ### Third mode: Hand gesture control & Face following
 In this mode we combine the two previous modes into one, now the **Face Following** mode just will control the yaw to keep the face in the center.  
 The drone will detect hand gestures and perform the corresponding commands.
-- insert demo.
+![mode3-demo.gif](Images/mode3-demo.gif)
 
 ## Strategy and algorithms used:
 - **Hand landmark:** we used the pretrained network of MidiaPipe to detect hand gestures, which provided accurate results.
